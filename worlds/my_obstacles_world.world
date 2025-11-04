@@ -1,0 +1,258 @@
+<?xml version="1.0" ?>
+<!-- Copyright (c) 2016 The UUV Simulator Authors.
+     All rights reserved.
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<sdf version="1.4">
+  <world name="default">
+    <physics name="default_physics" default="true" type="ode">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>100</real_time_update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>50</iters>
+          <sor>1.2</sor>
+        </solver>
+      </ode>
+    </physics>
+    <scene>
+      <ambient>0.01 0.01 0.01 1.0</ambient>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+      </sky>
+      <shadows>1</shadows>
+    </scene>
+
+    <!--
+      Origin close to the Trondheim Biological Station, in Trondheim, Norway
+    -->
+    <spherical_coordinates>
+      <latitude_deg>63.435952</latitude_deg>
+      <longitude_deg>10.357983</longitude_deg>
+    </spherical_coordinates>
+
+    <!-- Global light source -->
+    <light type="directional" name="sun1">
+      <pose>50 0 150 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>.1 .1 .1 1</specular>
+      <direction>0.3 0.3 -1</direction>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- Global light source -->
+    <light type="directional" name="sun_diffuse">
+      <pose>-50 0 -150 0 0 0</pose>
+      <diffuse>0.6 0.6 0.6 1</diffuse>
+      <specular>0 0 0 1</specular>
+      <direction>-0.3 -0.3 -1</direction>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- Bounding box with sea surface -->
+    <!-- 原始的平坦海底已被注释掉，使用自定义高斯地形 -->
+    <!--
+    <include>
+      <uri>model://sea_bottom</uri>
+      <pose>0 0 -80 0 0 0</pose>
+    </include>
+    -->
+
+    <include>
+      <uri>model://sea_surface</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- =============================================================== -->
+    <!-- =================== 自定义高斯海底地形 ======================== -->
+    <!-- =============================================================== -->
+    <!-- 
+      使用 scripts/generate_seafloor.py 生成的 STL 文件
+      该地形包含 2-3 个高斯特征（海山和海沟）
+      必须先运行 Python 脚本生成 models/seafloor/custom_seafloor.stl
+    -->
+    <model name='custom_seafloor'>
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <mesh>
+              <uri>file:///home/zw/master_ws/src/uuv_project_core/models/seafloor/custom_seafloor.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>file:///home/zw/master_ws/src/uuv_project_core/models/seafloor/custom_seafloor.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+          <material>
+            <!-- 沙色海底 - 更亮更明显 -->
+            <ambient>0.7 0.6 0.4 1</ambient>
+            <diffuse>0.9 0.8 0.6 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+            <emissive>0.1 0.08 0.05 1</emissive>
+          </material>
+          <cast_shadows>true</cast_shadows>
+        </visual>
+      </link>
+    </model>
+    <!-- =============================================================== -->
+    <!-- =================== 自定义高斯海底地形 END ==================== -->
+    <!-- =============================================================== -->
+
+    <!-- =============================================================== -->
+    <!-- =================== 自定义静态障碍物 START ==================== -->
+    <!-- =============================================================== -->
+
+    <!-- 障碍物 1: 一个大型的、有旋转角度的墙体 -->
+    <model name='large_rotated_wall'>
+      <static>true</static>
+      <pose>20 5 -15 0 0 0.785</pose> <!-- 位置: x=20, y=5, z=-15; 姿态: 绕Z轴旋转0.785弧度(约45度) -->
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box><size>15 1.5 20</size></box> <!-- 尺寸: 长15米, 宽1.5米, 高20米 -->
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box><size>15 1.5 20</size></box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Red</name> <!-- 颜色: 红色 -->
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 障碍物 2: 一个垂直的圆柱体，模拟管道或桥墩 -->
+    <model name='vertical_pillar'>
+      <static>true</static>
+      <pose>10 25 -20 0 0 0</pose> <!-- 位置: x=10, y=25, z=-20; 姿态: 无旋转 -->
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <cylinder>
+              <radius>2</radius> <!-- 半径2米 -->
+              <length>30</length> <!-- 高度30米 -->
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder>
+              <radius>2</radius>
+              <length>30</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Green</name> <!-- 颜色: 绿色 -->
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 障碍物 3: 一个较小的、有俯仰角度的长方体，模拟沉船残骸的一部分 -->
+    <model name='small_tilted_box'>
+      <static>true</static>
+      <pose>25 -15 -10 0 0.5 0.3</pose> <!-- 位置: x=25, y=-15, z=-10; 姿态: 绕Y轴(俯仰)和Z轴(偏航)都有旋转 -->
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box><size>8 4 3</size></box> <!-- 尺寸: 8x4x3米 -->
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box><size>8 4 3</size></box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Blue</name> <!-- 颜色: 蓝色 -->
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- =============================================================== -->
+    <!-- ==================== 自定义静态障碍物 END ===================== -->
+    <!-- =============================================================== -->
+
+
+    <plugin name="underwater_current_plugin" filename="libuuv_underwater_current_ros_plugin.so">
+      <namespace>hydrodynamics</namespace>
+      <constant_current>
+        <topic>current_velocity</topic>
+        <velocity>
+          <mean>0</mean>
+          <min>0</min>
+          <max>5</max>
+          <mu>0.0</mu>
+          <noiseAmp>0.0</noiseAmp>
+        </velocity>
+
+        <horizontal_angle>
+          <mean>0</mean>
+          <min>-3.141592653589793238</min>
+          <max>3.141592653589793238</max>
+          <mu>0.0</mu>
+          <noiseAmp>0.0</noiseAmp>
+        </horizontal_angle>
+
+        <vertical_angle>
+          <mean>0</mean>
+          <min>-3.141592653589793238</min>
+          <max>3.141592653589793238</max>
+          <mu>0.0</mu>
+          <noiseAmp>0.0</noiseAmp>
+        </vertical_angle>
+      </constant_current>
+    </plugin>
+
+    <plugin name="sc_interface" filename="libuuv_sc_ros_interface_plugin.so"/>
+
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>34.6042 32.2383 -20.6633 0 0.528384 1.41245</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>

@@ -1,0 +1,163 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Name: Tool Properties
+  - Class: rviz/Views
+    Name: Views
+  - Class: rviz/Time
+    Name: Time
+
+Visualization Manager:
+  Class: ""
+  Enabled: true
+  Global Options:
+    Background Color: 48;48;48
+    Fixed Frame: world
+    Frame Rate: 30
+
+  Displays:
+    - Class: rviz/Grid
+      Enabled: true
+      Name: Grid
+      Cell Size: 1
+      Color: 160;160;160
+      Alpha: 0.5
+      Plane Cell Count: 20
+      Reference Frame: world
+
+    - Class: octomap_rviz_plugin/OccupancyGrid   # 使用 OccupancyGrid 显示完整的三维地图
+      Enabled: true                               # 启用插件
+      Name: OctoMapDisplay                        # 给这个显示项起个名字
+      Octomap Topic: /a9/octomap                 # 订阅我们发布的 OctoMap 话题
+      Queue Size: 5                              # 消息队列大小
+      Voxel Rendering: Occupied Voxels           # 只显示占据的体素
+      Voxel Coloring: Z-Axis                     # 按 Z 轴高度着色，便于观察三维结构
+      Alpha: 0.8                                 # 设置透明度
+      Tree Depth: 16                             # 显示所有深度的体素
+      
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Name: OctoMapMarkers
+      Marker Topic: /a9/octomap_markers
+      Queue Size: 10
+
+    - Class: rviz/PointCloud2
+      Enabled: true
+      Name: FrontierPoints
+      Topic: /a9/frontier_points
+      Queue Size: 10
+      Color Transformer: FlatColor
+      Color: 255;255;0
+      Size (Pixels): 4
+      Style: Points
+      Alpha: 1.0
+
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Name: FrontierMarkers
+      Marker Topic: /a9/frontier_markers
+      Queue Size: 10
+
+    - Class: rviz/Pose
+      Enabled: true
+      Name: Goal
+      Topic: /a9/exploration_goal
+      Alpha: 1
+      Axes Length: 1.0
+      Axes Radius: 0.05
+      Color: 0;255;0
+      Head Length: 0.3
+      Head Radius: 0.1
+      Shaft Length: 0.8
+      Shaft Radius: 0.03
+
+    # ========== 航路点导航可视化 ==========
+    
+    - Class: rviz/Path
+      Enabled: true
+      Name: ActualTrajectory
+      Topic: /a9/actual_trajectory
+      Color: 255;0;0  # 红色 - UUV 实际轨迹
+      Alpha: 1.0
+      Buffer Length: 1
+      Line Style: Lines
+      Line Width: 0.05
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255;85;255
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Head Diameter: 0.3
+      Head Length: 0.2
+
+    - Class: rviz/Path
+      Enabled: true
+      Name: CoveragePath
+      Topic: /a9/coverage_path
+      Color: 0;255;0  # 绿色 - 规划的覆盖路径
+      Alpha: 0.8
+      Buffer Length: 1
+      Line Style: Lines
+      Line Width: 0.03
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255;85;255
+      Pose Style: None
+      Radius: 0.03
+      Shaft Diameter: 0.1
+      Shaft Length: 0.1
+      Head Diameter: 0.3
+      Head Length: 0.2
+
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Name: Waypoints
+      Marker Topic: /a9/waypoints
+      Queue Size: 10
+
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Name: InterpolatorMarkers
+      Marker Topic: /a9/interpolator_visual_markers
+      Queue Size: 10
+
+    - Class: rviz/Marker
+      Enabled: true
+      Name: CurrentTarget
+      Marker Topic: /a9/current_target
+      Queue Size: 10
+
+    # ========================================
+
+    - Class: rviz/RobotModel
+      Enabled: true
+      Name: AUV
+      Robot Description: /a9/robot_description
+      Visual Enabled: true
+      Collision Enabled: false
+
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 30
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Pitch: 0.5
+      Yaw: 0.8

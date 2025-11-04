@@ -1,0 +1,85 @@
+<launch>
+
+  <!-- 设置 Gazebo 模型路径，让它能找到自定义海底模型 -->
+  <env name="GAZEBO_MODEL_PATH" value="$(find uuv_project_core)/models:$(optenv GAZEBO_MODEL_PATH)" />
+
+  <!-- =================== 第一部分：启动仿真世界 ==================== -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find uuv_project_core)/worlds/my_obstacles_world.world" />
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+  </include>
+
+  <!-- ===================== 第二部分：加载ECA A9模型 ==================== -->
+  <arg name="uuv_name" default="a9"/>
+  <include file="$(find eca_a9_description)/launch/upload_eca_a9.launch">
+      <arg name="namespace" value="$(arg uuv_name)"/>
+      <arg name="use_ned_frame" value="false"/>
+      <arg name="x" value="-50"/>  <!-- 地图左边界，第一个航路点的 X 坐标 -->
+      <arg name="y" value="-50"/>  <!-- 地图下边界，第一个航路点的 Y 坐标 -->
+      <arg name="z" value="-30"/>  <!-- 扫描高度，第一个航路点的 Z 坐标 -->
+      <arg name="yaw" value="0"/>  <!-- 初始朝向：0度(朝向+X方向) -->
+  </include>
+  
+  <!-- ================= 第三部分：启动建图节点 ================= -->
+  <node pkg="uuv_project_core" type="grid_map_node" name="grid_map_node" output="screen"/>
+
+  <!-- ================= 第四部分：启动 UUV 控制器 ================= -->
+  <include file="$(find eca_a9_control)/launch/start_geometric_tracking_control.launch">
+    <arg name="uuv_name" value="$(arg uuv_name)"/>
+    <arg name="gui_on" value="false"/>
+    
+    <!-- 速度控制 - 提高速度以改善控制稳定性 -->
+    <arg name="max_forward_speed" value="0.8"/>  <!-- 0.4 → 0.8 m/s，提高速度改善控制 -->
+    
+    <!-- 路径跟踪参数 - 关键修改！ -->
+    <arg name="dubins_radius" value="15"/>       <!-- 20 → 15 米，减小转弯半径 -->
+    <arg name="idle_radius" value="300"/>        <!-- 保持 300 米，避免进入 idle 模式 -->
+    <arg name="look_ahead_delay" value="3.0"/>   <!-- 6.0 → 3.0 秒，减小前瞻距离 -->
+                                                  <!-- 前瞻距离 = 0.8 × 3 = 2.4 米 (保持不变) -->
+    
+    <!-- 推力控制 - 提高响应速度 -->
+    <arg name="thrust_p_gain" value="10.0"/>     <!-- 8.0 → 10.0，提高响应 -->
+    <arg name="thrust_d_gain" value="1.0"/>      <!-- 0.8 → 1.0，增加阻尼 -->
+    <arg name="max_thrust" value="150"/>         <!-- 保持最大推力 150 N -->
+    
+    <!-- 姿态控制增益 - 减小偏航增益避免振荡 -->
+    <arg name="p_roll" value="0.3"/>             <!-- 0.4 → 0.3，更保守 -->
+    <arg name="p_pitch" value="1.0"/>            <!-- 1.2 → 1.0，减小增益 -->
+    <arg name="d_pitch" value="0.6"/>            <!-- 0.5 → 0.6，增加阻尼 -->
+    <arg name="p_yaw" value="0.6"/>              <!-- 1.0 → 0.6，大幅减小避免振荡 -->
+    <arg name="d_yaw" value="0.8"/>              <!-- 0.6 → 0.8，增加阻尼抑制振荡 -->
+  </include>
+
+  <!-- ================= 第五部分：启动航路点导航节点 ================= -->
+  <!-- 注释掉自动启动,改为手动启动以便调试 -->
+  <!-- 手动启动命令: 
+       rosrun uuv_project_core waypoint_navigation_node _map_origin_x:=-50.0 _map_origin_y:=-50.0 _map_origin_z:=-30.0 _map_width:=100.0 _map_height:=100.0 _map_depth:=20.0 _sonar_h_fov:=1.57 _sonar_v_fov:=1.05 _sonar_range:=35.0 _overlap_ratio:=0.25 _max_speed:=0.4
+  -->
+  <!--
+  <node pkg="uuv_project_core" type="waypoint_navigation_node" name="waypoint_navigation_node" 
+        output="screen" respawn="false" required="false">
+    <param name="map_origin_x" value="-50.0"/>
+    <param name="map_origin_y" value="-50.0"/>
+    <param name="map_origin_z" value="-30.0"/>
+    <param name="map_width" value="100.0"/>
+    <param name="map_height" value="100.0"/>
+    <param name="map_depth" value="20.0"/>
+    <param name="sonar_h_fov" value="1.57"/>
+    <param name="sonar_v_fov" value="1.05"/>
+    <param name="sonar_range" value="35.0"/>
+    <param name="overlap_ratio" value="0.25"/>
+    <param name="max_speed" value="0.4"/>
+    <param name="arrival_threshold" value="8.0"/>
+  </node>
+  -->
+
+
+
+  <!-- ================= 第六部分：启动 RViz 可视化 ================= -->
+  <!-- 这里用配置文件加载 RViz，避免每次手动设置 -->
+  <arg name="rviz_config" default="$(find uuv_project_core)/rviz/exploration.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_config)" />
+
+</launch>

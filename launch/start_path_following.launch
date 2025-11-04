@@ -1,0 +1,44 @@
+<launch>
+
+  <!-- 设置 Gazebo 模型路径 -->
+  <env name="GAZEBO_MODEL_PATH" value="$(find uuv_project_core)/models:$(optenv GAZEBO_MODEL_PATH)" />
+
+  <!-- =================== 第一部分：启动仿真世界 ==================== -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find uuv_project_core)/worlds/my_obstacles_world.world" />
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+  </include>
+
+  <!-- ===================== 第二部分：加载ECA A9模型 ==================== -->
+  <arg name="uuv_name" default="a9"/>
+  <include file="$(find eca_a9_description)/launch/upload_eca_a9.launch">
+      <arg name="namespace" value="$(arg uuv_name)"/>
+      <arg name="use_ned_frame" value="false"/>
+      <arg name="x" value="-50"/>
+      <arg name="y" value="-50"/>
+      <arg name="z" value="-30"/>
+      <arg name="yaw" value="0"/>  <!-- 初始朝向：0度(朝向+X方向，即东) -->
+  </include>
+  
+  <!-- ================= 第三部分：启动建图节点 ================= -->
+  <node pkg="uuv_project_core" type="grid_map_node" name="grid_map_node" output="screen"/>
+
+  <!-- ================= 第四部分：路径跟踪控制器（PI控制） ================= -->
+  <!-- 手动启动命令: rosrun uuv_project_core path_following_node -->
+  <!-- 或使用脚本: bash src/uuv_project_core/scripts/start_path_following.sh -->
+  <!-- 
+  参数说明：
+    - lookahead_distance: 前瞻距离（米）
+    - max_speed: 最大速度（m/s）
+    - kp_thrust, ki_thrust: 推力PI增益
+    - kp_yaw, ki_yaw: 偏航PI增益
+    - kp_pitch, ki_pitch: 俯仰PI增益
+  -->
+
+  <!-- ================= 第五部分：启动 RViz 可视化 ================= -->
+  <arg name="rviz_config" default="$(find uuv_project_core)/rviz/exploration.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(arg rviz_config)" />
+
+</launch>
